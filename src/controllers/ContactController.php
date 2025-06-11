@@ -1,100 +1,91 @@
 <?php
 declare(strict_types=1);
+
 namespace App\Controllers;
 
-use mysqli;
+use App\Models\Contact;
+use App\Models\Company;
 use Exception;
 
 class ContactController
 {
-    private mysqli $db;
+    private Contact $contactModel;
+    private Company $companyModel;
 
     public function __construct()
     {
-        $this->db = new mysqli('localhost','root','','flyhub_erp');
-        if($this->db->connect_error){
-            throw new Exception('DB connect error: '.$this->db->connect_error);
-        }
+        $this->contactModel = new Contact();
+        $this->companyModel = new Company();
     }
 
-    public function listContacts(string $search='', string $orderBy='first_name', string $orderDir='asc'): array
+    public function listContacts(string $search = '', string $orderBy = 'first_name', string $orderDir = 'asc'): array
     {
-        $allowed = ['first_name','last_name','email','phone'];
-        if(!in_array($orderBy,$allowed,true)) $orderBy='first_name';
-        $orderDir = strtolower($orderDir)==='desc' ? 'DESC' : 'ASC';
-
-        $sql = "SELECT id, first_name, last_name, email, phone FROM contacts";
-        if(trim($search)!==''){
-          $s = $this->db->real_escape_string($search);
-          $sql .= " WHERE first_name LIKE '%{$s}%' OR last_name LIKE '%{$s}%'
-                    OR email LIKE '%{$s}%' OR phone LIKE '%{$s}%'";
-        }
-        $sql .= " ORDER BY {$orderBy} {$orderDir}";
-
-        $res = $this->db->query($sql);
-        $rows = [];
-        if($res instanceof \mysqli_result){
-          while($r = $res->fetch_assoc()){
-            $rows[] = $r;
-          }
-          $res->free();
-        }
-        return $rows;
+        return $this->contactModel->searchContacts($search, $orderBy, $orderDir);
     }
 
     public function getContactById(int $id): ?array
     {
-        $stmt = $this->db->prepare('SELECT * FROM contacts WHERE id = ?');
-        $stmt->bind_param('i', $id);
-        $stmt->execute();
-        $r = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-        return $r ?: null;
+        $contact = $this->contactModel->find($id);
+        if ($contact && $contact['company_id']) {
+            $company = $this->companyModel->find($contact['company_id']);
+            $contact['company'] = $company;
+        }
+        return $contact;
     }
 
     public function createContact(array $data): void
     {
-        $stmt = $this->db->prepare(
-          'INSERT INTO contacts (first_name,last_name,email,phone) VALUES (?,?,?,?)'
-        );
-        $stmt->bind_param(
-          'ssss',
-          $data['first_name'],
-          $data['last_name'],
-          $data['email'],
-          $data['phone']
-        );
-        $stmt->execute();
-        $stmt->close();
+        // Validate required fields
+        $required = ['first_name', 'last_name', 'email'];
+        foreach ($required as $field) {
+            if (empty($data[$field])) {
+                throw new Exception("Field {$field} is required");
+            }
+        }
+        
+        // Validate email format
+        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            throw new Exception("Invalid email format");
+        }
+        
+        // Set default status if not provided
+        if (!isset($data['status'])) {
+            $data['status'] = 'active';
+        }
+        
+        $this->contactModel->create($data);
     }
 
     public function updateContact(int $id, array $data): void
     {
-        $stmt = $this->db->prepare(
-          'UPDATE contacts SET first_name=?, last_name=?, email=?, phone=? WHERE id=?'
-        );
-        $stmt->bind_param(
-          'ssssi',
-          $data['first_name'],
-          $data['last_name'],
-          $data['email'],
-          $data['phone'],
-          $id
-        );
-        $stmt->execute();
-        $stmt->close();
+        if (!$this->contactModel->find($id)) {
+            throw new Exception("Contact not found");
+        }
+        
+        // Validate email if provided
+        if (!empty($data['email']) && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            throw new Exception("Invalid email format");
+        }
+        
+        $this->contactModel->update($id, $data);
     }
 
     public function deleteContact(int $id): void
     {
-        $stmt = $this->db->prepare('DELETE FROM contacts WHERE id=?');
-        $stmt->bind_param('i',$id);
-        $stmt->execute();
-        $stmt->close();
+        if (!$this->contactModel->find($id)) {
+            throw new Exception("Contact not found");
+        }
+        
+        $this->contactModel->delete($id);
     }
-
-    public function __destruct()
+    
+    public function bulkDeleteContacts(array $ids): void
     {
-        $this->db->close();
+        $this->contactModel->bulkDelete($ids);
+    }
+    
+    public function getContactsWithCompanies(): array
+    {
+        return $this->contactModel->getContactsWithCompany();
     }
 }

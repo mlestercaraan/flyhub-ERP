@@ -3,158 +3,107 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-use mysqli;
+use App\Models\Company;
 use Exception;
 
 class CompanyController
 {
-    private mysqli $db;
+    private Company $companyModel;
 
     public function __construct()
     {
-        $this->db = new mysqli('localhost', 'root', '', 'flyhub_erp');
-        if ($this->db->connect_error) {
-            throw new Exception('Database connect error: ' . $this->db->connect_error);
-        }
+        $this->companyModel = new Company();
     }
 
-    /**
-     * List companies, with optional search and sort
-     *
-     * @param string $searchTerm
-     * @param string $orderBy     One of company_name, city, country, website_url
-     * @param string $orderDir    asc or desc
-     * @return array<int,array{ id:string, company_name:string, city:string, country:string, website_url:string }>
-     */
     public function listCompanies(string $searchTerm = '', string $orderBy = 'company_name', string $orderDir = 'asc'): array
     {
-        $allowed = ['company_name','city','country','website_url'];
-        if (! in_array($orderBy, $allowed, true)) {
-            $orderBy = 'company_name';
-        }
-        $orderDir = strtolower($orderDir) === 'desc' ? 'DESC' : 'ASC';
-
-        $sql = 'SELECT id, company_name, city, country, website_url FROM companies';
-
-        if (trim($searchTerm) !== '') {
-            $s = $this->db->real_escape_string($searchTerm);
-            $sql .= sprintf(
-                " WHERE company_name LIKE '%%%1\$s%%' OR city LIKE '%%%1\$s%%' OR country LIKE '%%%1\$s%%' OR website_url LIKE '%%%1\$s%%'",
-                $s
-            );
-        }
-
-        $sql .= " ORDER BY {$orderBy} {$orderDir}";
-
-        $result = $this->db->query($sql);
-        $rows   = [];
-
-        if ($result instanceof \mysqli_result) {
-            while ($row = $result->fetch_assoc()) {
-                $rows[] = $row;
-            }
-            $result->free();
-        }
-
-        return $rows;
+        return $this->companyModel->searchCompanies($searchTerm, $orderBy, $orderDir);
     }
 
-    /**
-     * Get a single company by id
-     */
     public function getCompanyById(int $id): ?array
     {
-        $stmt = $this->db->prepare('SELECT id, company_name, city, country, website_url FROM companies WHERE id = ?');
-        $stmt->bind_param('i', $id);
-        $stmt->execute();
-        $res = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-
-        return $res ?: null;
+        return $this->companyModel->getCompanyWithContacts($id);
     }
 
-    /**
-     * Create a new company
-     */
     public function createCompany(array $data): void
     {
-        $stmt = $this->db->prepare(
-            'INSERT INTO companies (company_name, city, country, website_url) VALUES (?, ?, ?, ?)'
-        );
-        $stmt->bind_param(
-            'ssss',
-            $data['company_name'],
-            $data['city'],
-            $data['country'],
-            $data['website_url']
-        );
-        $stmt->execute();
-        $stmt->close();
+        // Validate required fields
+        if (empty($data['company_name'])) {
+            throw new Exception("Company name is required");
+        }
+        
+        // Validate website URL if provided
+        if (!empty($data['website_url']) && !filter_var($data['website_url'], FILTER_VALIDATE_URL)) {
+            throw new Exception("Invalid website URL format");
+        }
+        
+        // Validate email if provided
+        if (!empty($data['email']) && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            throw new Exception("Invalid email format");
+        }
+        
+        // Set default status if not provided
+        if (!isset($data['status'])) {
+            $data['status'] = 'active';
+        }
+        
+        $this->companyModel->create($data);
     }
 
-    /**
-     * Update an existing company
-     */
     public function updateCompany(int $id, array $data): void
     {
-        $stmt = $this->db->prepare(
-            'UPDATE companies SET company_name = ?, city = ?, country = ?, website_url = ? WHERE id = ?'
-        );
-        $stmt->bind_param(
-            'ssssi',
-            $data['company_name'],
-            $data['city'],
-            $data['country'],
-            $data['website_url'],
-            $id
-        );
-        $stmt->execute();
-        $stmt->close();
+        if (!$this->companyModel->find($id)) {
+            throw new Exception("Company not found");
+        }
+        
+        // Validate website URL if provided
+        if (!empty($data['website_url']) && !filter_var($data['website_url'], FILTER_VALIDATE_URL)) {
+            throw new Exception("Invalid website URL format");
+        }
+        
+        // Validate email if provided
+        if (!empty($data['email']) && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            throw new Exception("Invalid email format");
+        }
+        
+        $this->companyModel->update($id, $data);
     }
 
-    /**
-     * Delete a single company
-     */
     public function deleteCompany(int $id): void
     {
-        $stmt = $this->db->prepare('DELETE FROM companies WHERE id = ?');
-        $stmt->bind_param('i', $id);
-        $stmt->execute();
-        $stmt->close();
+        if (!$this->companyModel->find($id)) {
+            throw new Exception("Company not found");
+        }
+        
+        $this->companyModel->delete($id);
     }
 
-    /**
-     * Bulk delete companies by array of ids
-     */
     public function bulkDeleteCompanies(array $ids): void
     {
-        $filtered = array_map('intval', $ids);
-        if (empty($filtered)) {
-            return;
-        }
-        $in  = implode(',', $filtered);
-        $sql = "DELETE FROM companies WHERE id IN ({$in})";
-        $this->db->query($sql);
+        $this->companyModel->bulkDelete($ids);
     }
 
-    /**
-     * Inline edit a single field
-     */
-    public function inlineEditCompany(int $id, string $field, string $value): void
+    public function inlineEditCompany(int $id, string $field, string $value): string
     {
-        $allowed = ['company_name','city','country','website_url'];
-        if (! in_array($field, $allowed, true)) {
-            throw new Exception('Invalid field for inline edit');
+        try {
+            $allowed = ['company_name', 'industry', 'city', 'country', 'website_url', 'phone', 'email'];
+            if (!in_array($field, $allowed, true)) {
+                throw new Exception('Invalid field for inline edit');
+            }
+
+            // Validate specific fields
+            if ($field === 'email' && !empty($value) && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                throw new Exception('Invalid email format');
+            }
+            
+            if ($field === 'website_url' && !empty($value) && !filter_var($value, FILTER_VALIDATE_URL)) {
+                throw new Exception('Invalid URL format');
+            }
+
+            $this->companyModel->update($id, [$field => $value]);
+            return 'OK';
+        } catch (Exception $e) {
+            return 'Error: ' . $e->getMessage();
         }
-
-        $stmt = $this->db->prepare("UPDATE companies SET {$field} = ? WHERE id = ?");
-        $stmt->bind_param('si', $value, $id);
-        $stmt->execute();
-        $stmt->close();
-    }
-
-    public function __destruct()
-    {
-        $this->db->close();
     }
 }
