@@ -11,7 +11,7 @@ if (!isset($_GET['id'])) {
 $id = intval($_GET['id']);
 
 // DB connection
-$conn = new mysqli("localhost", "root", "", "crud_demo");
+$conn = new mysqli("localhost", "root", "", "flyhub_erp");
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 $sql = "SELECT * FROM contacts WHERE id = $id";

@@ -9,7 +9,7 @@ if (!isset($_GET['id'])) {
     exit();
 }
 $id = intval($_GET['id']);
-$conn = new mysqli("localhost", "root", "", "crud_demo");
+$conn = new mysqli("localhost", "root", "", "flyhub_erp");
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 $sql = "SELECT * FROM companies WHERE id = $id";

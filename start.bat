@@ -1,6 +1,6 @@
 @echo off
 REM Set root folder name
-set ROOT=crud_demo
+set ROOT=flyhub_erp
 
 REM Top-level
 mkdir "%ROOT%"
