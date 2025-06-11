@@ -4,11 +4,14 @@
   "description": "Flyhub ERP CRM System",
   "main": "index.js",
   "scripts": {
-    "dev": "php -S localhost:8000",
-    "start": "php -S localhost:8000",
+    "dev": "npx http-server . -p 8000 -o",
+    "start": "npx http-server . -p 8000",
     "build": "echo 'Build completed - PHP application ready for deployment'"
   },
   "keywords": ["erp", "crm", "php", "mysql"],
   "author": "Flyhub",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
 }
