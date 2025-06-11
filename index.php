@@ -15,7 +15,7 @@ $companyCtrl = new CompanyController();
 // 2) Define routes: action => [ controller|null, method|null, view|null ]
 $routes = [
     // Contacts
-    'list'        => [ $contactCtrl, 'listContacts',    'dashboard.php'   ],
+    'list'        => [ $contactCtrl, 'listContacts',    'contacts.php'   ],
     'edit'        => [ $contactCtrl, 'getContactById',   'editContact.php' ],
     'update'      => [ $contactCtrl, 'updateContact',    null              ],
     'create'      => [ $contactCtrl, 'createContact',    null              ],
@@ -33,6 +33,7 @@ $routes = [
 
     // Blank view‐only page
     'blank'       => [ null,           null,                  'blank.php'        ],
+    'dashboard'       => [ null,           null,                  'dashboard.php'        ],
 ];
 
 // 3) Determine action

@@ -48,43 +48,11 @@ function sort_link($col, $label, $order_by, $order_dir, $searchTerm) {
 <body class="bg-light">
 
   <!-- Top Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-light mb-0 shadow-sm fixed-top" style="z-index: 1040;">
-    <div class="container-fluid">
-      <button class="sidebar-toggler" id="sidebarToggle"><i class="bi bi-list"></i></button>
-      <span class="navbar-brand ms-2">
-        <img src="flyhub-logo.png" class="flyhub-logo" alt="Flyhub Logo">
-        Flyhub CRM
-      </span>
-      <div class="d-flex align-items-center">
-        <span class="me-3">👋 Hello, <?= htmlspecialchars($_SESSION['user']); ?></span>
-        <a href="index.php?action=logout" class="btn btn-outline-danger btn-sm">Logout</a>
-      </div>
-    </div>
-  </nav>
+    <?php include __DIR__ . '/global/topbar.php'; ?>
+
 
   <!-- Sidebar -->
-  <div class="sidebar" id="sidebarNav">
-    <ul class="nav flex-column pt-2">
-      <li class="nav-item">
-        <a class="nav-link" href="index.php?action=list"><i class="bi bi-house-door"></i> Dashboard</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="index.php?action=list"><i class="bi bi-person-lines-fill"></i> Contacts</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link active" href="index.php?action=listCompanies"><i class="bi bi-building"></i> Companies</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#"><i class="bi bi-briefcase"></i> Deals</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#"><i class="bi bi-check2-square"></i> Tasks</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#"><i class="bi bi-gear"></i> Settings</a>
-      </li>
-    </ul>
-  </div>
+  <?php include __DIR__ . '/global/sidebar.php'; ?>
 
   <!-- Content Area -->
   <div class="content">
@@ -231,9 +199,7 @@ function sort_link($col, $label, $order_by, $order_dir, $searchTerm) {
   </div> <!-- /.content -->
 
   <!-- Footer -->
-  <div class="footer text-center py-2">
-    &copy; <?= date('Y') ?> Flyhub CRM
-  </div>
+  <?php include __DIR__ . '/global/footer.php'; ?>
 
   <!-- Scripts -->
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

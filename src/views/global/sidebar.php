@@ -1,7 +1,7 @@
 <div class="sidebar" id="sidebarNav">
     <ul class="nav flex-column pt-2">
       <li class="nav-item">
-        <a class="nav-link" href="index.php?action=list"><i class="bi bi-house-door"></i> Dashboard</a>
+        <a class="nav-link" href="index.php?action=dashboard"><i class="bi bi-house-door"></i> Dashboard</a>
       </li>
       <li class="nav-item">
         <a class="nav-link active" href="index.php?action=list"><i class="bi bi-person-lines-fill"></i> Contacts</a>
@@ -16,6 +16,9 @@
         </a>
       </li>
       <li class="nav-item">
+        <a class="nav-link" href="#"><i class="bi bi-gear"></i> Products</a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link" href="#"><i class="bi bi-briefcase"></i> Deals</a>
       </li>
       <li class="nav-item">
@@ -24,5 +27,6 @@
       <li class="nav-item">
         <a class="nav-link" href="#"><i class="bi bi-gear"></i> Settings</a>
       </li>
+
     </ul>
   </div>
